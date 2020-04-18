@@ -179,71 +179,63 @@ def kmBIC(ctrs, labs, X):
     return(BIC), m
 
 #def emMKPOS_sep1A(nhmks, hmks, TR=5, wfNClstrs=[[1, 7], [1, 10]], spNClstrs=[[1, 2], [1, 7]], K=4, spcdim=1):
-def emMKPOS_sep1A(nhmks, hmks, TR=5, wfNClstrs=[[1, 2], [1, 3]], spNClstrs=[[1, 3], [1, 3]], K=4, spcdim=1):
+def emMKPOS_sep1A(mks, TR=5, wfNClstrs=[1, 3], spNClstrs=[1, 3], K=4, spcdim=1):
     #  wfNClstrs   [ non-hash(min, max), hash(min, max)  by waveform clustering
     TR = 2
-
-    iNH = -1
-    sNH = ["nh", "h"]
 
     bestLabs = []
 
     minSz = 5
-    startClstrs = _N.empty(2, dtype=_N.int)
     iRMv_ME   = 0
-    for mks in [hmks, nhmks]:
-        iNH += 1
-        minK, maxK = wfNClstrs[iNH]
-        startCl = 0 
-        bestLabMP = None
-        if mks is not None:
-            print("minK  %(min)d     maxK  %(max)d" % {"min" : minK, "max" : maxK})
-            labs, bics, bestLab, nClstrs = _oT.EMwfBICs(mks, minK=minK, maxK=maxK, TR=TR)
-            bestLab = _N.array(bestLab, dtype=_N.int)
 
-            #    if mks == nhmks:
+    minK, maxK = wfNClstrs
+    startCl = 0 
+    bestLabMP = None
 
-            ##  non-hash, do spatial clustering
+    if mks.shape[0] < 7*K:  #  probably BIC for such small data not good,
+        maxK = minK+2 
+    print("minK  %(min)d     maxK  %(max)d" % {"min" : minK, "max" : maxK})
+    labs, bics, bestLab, nClstrs = _oT.EMwfBICs(mks, minK=minK, maxK=maxK, TR=TR)
+    bestLab = _N.array(bestLab, dtype=_N.int)
 
-            bestLabMP = _N.array(bestLab)
-            #for i in _N.unique(bestLab):  # how many "neurons" did we find?
-            #    print "for %(i)d   there are %(n)d" % {"i" : i, "n" : len(_N.where(bestLab == i)[0])}
-            print("neurons for iNH=%(nh)d   WF nclusters %(nc)d" % {"nh" : iNH, "nc" : nClstrs})
-            for nc in range(nClstrs):
-                minK, _maxK = spNClstrs[iNH]
+    #    if mks == nhmks:
 
-                inThisClstr = _N.where(bestLab == nc)[0]
-                LiTC        = len(inThisClstr)
+    ##  non-hash, do spatial clustering
 
-                if LiTC > 2:   #  at least 2 spikes from this neuron
-                    pbestLab = _N.ones(LiTC, dtype=_N.int) * -1   #  poslabs
-                    pos = mks[inThisClstr, 0:spcdim]
-                    #_N.savetxt("clstr%(nh)d_%(iRM)d" % {"nh" : iNH, "iRM" : iRMv_ME}, mks[inThisClstr], fmt="%.4f %4f %.4f %4f %.4f")
-                    iRMv_ME += 1
-                    pos = pos.reshape(LiTC, spcdim)
+    bestLabMP = _N.array(bestLab)
+    #for i in _N.unique(bestLab):  # how many "neurons" did we find?
+    #    print "for %(i)d   there are %(n)d" % {"i" : i, "n" : len(_N.where(bestLab == i)[0])}
+    print("WF nclusters %(nc)d" % {"nc" : nClstrs})
+    for nc in range(nClstrs):
+        minK, _maxK = spNClstrs
 
-                    #  1 spk / clstr maxK == LiTC   want a few more than 1 / clstr
-                    #  maxK is at most _maxK unless LiTC
-                    maxK = _maxK if LiTC > _maxK else LiTC-1
+        inThisClstr = _N.where(bestLab == nc)[0]
+        LiTC        = len(inThisClstr)
 
-                    if spcdim == 1:
-                        plabs, pbics, pbestLab, pClstrs = _oT.EMposBICs(pos, minK=minK, maxK=maxK, TR=2)
-                    else:
-                        plabs, pbics, pbestLab, pClstrs = _oT.EMposBICs(pos, minK=minK, maxK=maxK, TR=2)                        
-                        pClstrs = contiguous_pack2(pbestLab)
-                else:   #  only 2 in this waveform cluster
-                    pClstrs = 1
-                    pbestLab= _N.zeros(LiTC, dtype=_N.int)
-                pbestLab[_N.where(pbestLab >= 0)[0]] += startCl  #  only the ones used for init
-                startCl += pClstrs
-                bestLabMP[inThisClstr] = pbestLab
-        startClstrs[iNH] = startCl
+        if LiTC > 2:   #  at least 2 spikes from this neuron
+            pbestLab = _N.ones(LiTC, dtype=_N.int) * -1   #  poslabs
+            pos = mks[inThisClstr, 0:spcdim]
+            #_N.savetxt("clstr%(nh)d_%(iRM)d" % {"nh" : iNH, "iRM" : iRMv_ME}, mks[inThisClstr], fmt="%.4f %4f %.4f %4f %.4f")
+            iRMv_ME += 1
+            pos = pos.reshape(LiTC, spcdim)
 
-        if bestLabMP is None:
-            bestLabs.append(_N.array([], dtype=_N.int))
-        else:
-            bestLabs.append(_N.array(bestLabMP))
-    return bestLabs[0], bestLabs[1], startClstrs
+            #  1 spk / clstr maxK == LiTC   want a few more than 1 / clstr
+            #  maxK is at most _maxK unless LiTC
+            maxK = _maxK if LiTC > _maxK else LiTC-1
+
+            if spcdim == 1:
+                plabs, pbics, pbestLab, pClstrs = _oT.EMposBICs(pos, minK=minK, maxK=maxK, TR=2)
+            else:
+                plabs, pbics, pbestLab, pClstrs = _oT.EMposBICs(pos, minK=minK, maxK=maxK, TR=2)                        
+                pClstrs = contiguous_pack2(pbestLab)
+        else:   #  only 2 in this waveform cluster
+            pClstrs = 1
+            pbestLab= _N.zeros(LiTC, dtype=_N.int)
+        pbestLab[_N.where(pbestLab >= 0)[0]] += startCl  #  only the ones used for init
+        startCl += pClstrs
+        bestLabMP[inThisClstr] = pbestLab
+
+    return _N.array(bestLabMP), startCl
 
 
 def ignoreSmallMarks(marks, allFR):

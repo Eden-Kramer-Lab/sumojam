@@ -2,7 +2,7 @@
 #  discontinuous change of place field params
 import os
 import utilities as _U
-from jifimogs.tools.utils import createSmoothedPath, createSmoothedPathK
+from sumojam.tools.utils import createSmoothedPath, createSmoothedPathK
 import numpy as _N
 import matplotlib.pyplot as _plt
 import pickle

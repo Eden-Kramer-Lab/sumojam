@@ -1,18 +1,18 @@
 ##  decode script
 #import matplotlib
 #matplotlib.use('Agg')
-import jifimogs.mkdecoder as _mkd
+import sumojam.mkdecoder as _mkd
 import pickle as _pkl
-import jifimogs.tools.plottools as mF
+import sumojam.tools.plottools as mF
 import os
-import jifimogs.tools.decodeutil as _du
-import jifimogs.tools.manypgs as _mpgs
+import sumojam.tools.decodeutil as _du
+import sumojam.tools.manypgs as _mpgs
 import time as _tm
 import shutil
 import matplotlib.ticker as ticker
 import numpy as _N
 import matplotlib.pyplot as _plt
-from jifimogs.devscripts.cmdlineargs import process_keyval_args
+from sumojam.devscripts.cmdlineargs import process_keyval_args
 import sys
 
 _plt.ioff()    

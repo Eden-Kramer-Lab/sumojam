@@ -143,10 +143,6 @@ class MarkAndRF:
         intvs     = _N.loadtxt("%s.dat" % datFN(intvfn, create=False))
         _intvs  = _N.array(intvs*_dat.shape[0], dtype=_N.int) if seg_filtered_intvs is None else seg_filtered_intvs
 
-        print(intvs)
-        print(_intvs)        
-        print(_dat.shape)
-        
         oo.intvs  = _N.array(_intvs)  # intervals in time of movement filtered data
 
         t0 = 0
@@ -164,8 +160,6 @@ class MarkAndRF:
         oo.xHi = xHi   #  this limit used for spatial path sum
         oo.yLo = yLo   #  this limit used for spatial path sum
         oo.yHi = yHi   #  this limit used for spatial path sum
-        print("x:  %(1).1f %(2).1f" % {"1" : oo.xLo, "2" : oo.xHi})
-        print("y:  %(1).1f %(2).1f" % {"1" : oo.yLo, "2" : oo.yHi})        
 
     def setup_spatial_sum_params(self, q2x=None, fx=None): 
         """
@@ -182,8 +176,9 @@ class MarkAndRF:
         """ 
         gtdiffusion:  use ground truth center of place field in calculating variance of center.  Meaning of diffPerMin different 
         """ 
-        print("gibbs   %.5f" % _N.random.rand())
         oo = self
+        print("RUNNING GIBBS GIBBS 2d  %(tet)d   %(save)s" % {"tet" : oo.tetr, "save" : oo.outdir})
+        
         oo.earliest=earliest
         twpi     = 2*_N.pi
         pcklme   = {}
@@ -226,8 +221,6 @@ class MarkAndRF:
         tau_q2 = oo.t_hlf_q2/_N.log(2)
 
         _cdfs2dA.init(oo.dt, oo.f_L, oo.f_H, oo.q2_L, oo.q2_H, f_STEPS, q2_STEPS, f_SMALL, q2_SMALL, f_cldz, q2_cldz, minSmps)
-
-        print("done occ_resolu")
 
         M_max   = 50   #  100 clusters, max
         M_use    = 0     #  number of non-free + 5 free clusters
@@ -334,7 +327,7 @@ class MarkAndRF:
 
                 #mving = _N.where(oo.dat[t0:t1, 8] == 1)[0] + t0
                 #print("len mving  %d" % len(mving))
-                labS, labH, flatlabels, M_use = gAMxMu.initClusters(oo, M_max, K, xy, init_mks, t0, t1, Asts, xLo=oo.xLo, xHi=oo.xHi, oneCluster=oo.oneCluster, spcdim=2)
+                labS, flatlabels, M_use = gAMxMu.initClusters(oo, M_max, K, xy, init_mks, t0, t1, Asts, xLo=oo.xLo, xHi=oo.xHi, oneCluster=oo.oneCluster, spcdim=2)
 
                 #m1stSignalClstr = 0 if oo.oneCluster else nHSclusters[0]
 
@@ -376,14 +369,12 @@ class MarkAndRF:
                 l0_exp_hist_M = _N.empty(M_max)
 
                 _l0_a_M, _l0_B_M, _fx_u_M, _fy_u_M, _fx_q2_M, _fy_q2_M, _q2x_a_M, _q2y_a_M, _q2x_B_M, _q2y_B_M, _u_u_M, \
-                    _u_Sg_M, _Sg_nu_M, _Sg_PSI_M = gAMxMu.declare_prior_hyp_params(M_max, K, xy, fit_mks, Asts, t0, priors, labS, labH, spcdim=2)
+                    _u_Sg_M, _Sg_nu_M, _Sg_PSI_M = gAMxMu.declare_prior_hyp_params(M_max, K, xy, fit_mks, Asts, t0, priors, labS, None, spcdim=2)
 
                     #_u_Sg_M, _Sg_nu_M, _Sg_PSI_M = gAMxMu.declare_prior_hyp_params(M_max, nHSclusters, K, xy, fit_mks, Asts, t0, priors, labS, labH, spcdim=2)
 
                 print("----------------")
                 print("M_use  %d" % M_use)
-                print(_fx_u_M)                
-                print(_fy_u_M)
                 
                 l0, fx, fy, q2x, q2y, u, Sg        = gAMxMu.copy_slice_params_2d(M_use, l0_M, fx_M, fy_M, q2x_M, q2y_M, u_M, Sg_M)
                 _l0_a, _l0_B, _fx_u, _fy_u, _fx_q2, _fy_q2, _q2x_a, _q2y_a, _q2x_B, _q2y_B, _u_u, _u_Sg, _Sg_nu, _Sg_PSI        = gAMxMu.copy_slice_hyp_params_2d(M_use, _l0_a_M, _l0_B_M, _fx_u_M, _fy_u_M, _fx_q2_M, _fy_q2_M, _q2x_a_M, _q2y_a_M, _q2x_B_M, _q2y_B_M, _u_u_M, _u_Sg_M, _Sg_nu_M, _Sg_PSI_M)
@@ -394,8 +385,6 @@ class MarkAndRF:
 
                 print("----------------")
                 print("M_use  %d" % M_use)
-                print(_fx_u)                
-                print(_fy_u)
                 
                 l0_exp_hist = _N.array(l0_exp_hist_M[0:M_use], copy=True)
 
@@ -404,8 +393,6 @@ class MarkAndRF:
 
                 print("----------------")
                 print("M_use  %d" % M_use)                
-                print(_fx_u)                
-                print(_fy_u)
                 
                 ##   hard code
                 #_q2x_u[0:(3*M)/4] = 
@@ -772,13 +759,6 @@ class MarkAndRF:
                 if (global_stop_condition and (cond1 or cond2)):
                     print("I SHOULD NEVER BE HERE")
                     tttt1 = _tm.time()
-                    print(clstszs[0])
-                    print(clstszs[1000])
-                    print(clstszs[2000])
-                    print(clstszs[itr-3])
-                    print(clstszs[itr-2])
-                    print(clstszs[itr-1])                    
-                    print(clstszs[itr])
                     stop_Gibbs = _pU.stop_Gibbs_cgz(itr, M_use, nSpks, smp_sp_prms, clstszs, spcdim=2)
                     tttt2 = _tm.time()
                     print("tet %(tet)d   stop_Gibbs:  %(tm).2f" % {"tet" : oo.tetr, "tm" : (tttt2-tttt1)})
@@ -825,6 +805,7 @@ class MarkAndRF:
             print("itr is %d" % itr)
 
             gAMxMu.finish_epoch2_cgz_2d(oo, nSpks, epc, itr+1, clstszs, l0, fx, fy, q2x, q2y, u, Sg, _fx_u, _fy_u, _fx_q2, _fy_q2, _q2x_a, _q2y_a, _q2x_B, _q2y_B, _l0_a, _l0_B, _u_u, _u_Sg, _Sg_nu, _Sg_PSI, smp_sp_prms, smp_mk_prms, smp_mk_hyps, freeClstr, M_use, K, priors, global_stop_condition, goback//3)
+            
             #  _l0_a is a copy of a subset of _l0_a_M
             #  we need to copy back the values _l0_a back into _l0_a_M
             gAMxMu.contiguous_inuse_cgz_2d(M_use, M_max, K, freeClstr, l0, fx, fy, q2x, q2y, u, Sg, _l0_a, _l0_B, _fx_u, _fy_u, _fx_q2, _fy_q2, _q2x_a, _q2y_a, _q2x_B, _q2y_B, _u_u, _u_Sg, _Sg_nu, _Sg_PSI, smp_sp_prms, smp_mk_prms, oo.sp_prmPstMd, oo.mk_prmPstMd, cgz, priors)
@@ -853,3 +834,4 @@ class MarkAndRF:
             pickle.dump(pcklme, dmp, -1)
             dmp.close()
 
+        print("DONE WITH GIBBS GIBBS 2d  %(tet)d   %(save)s" % {"tet" : oo.tetr, "save" : oo.outdir})

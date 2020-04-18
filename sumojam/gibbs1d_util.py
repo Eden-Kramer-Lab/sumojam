@@ -45,37 +45,10 @@ def initClusters(oo, M_max, K, x, mks, t0, t1, Asts, xLo=0, xHi=3, oneCluster=Fa
     else:
         #if not doSepHash:
         unonhash = _N.arange(len(Asts))
-        hashsp   = _N.array([])
-        hashthresh = _N.min(_x[:, spcdim:], axis=0)   #  no hash spikes
+        spNClstrs=[1, 4] if spcdim==1 else [1, 3]
 
-        if (len(unonhash) > 0) and (len(hashsp) > 0):  # REAL DATA
-            labH, labS, clstrs = emMKPOS_sep1A(_x[unonhash], _x[hashsp], K=K, TR=3)
-        elif len(unonhash) == 0:
-            labH, labS, clstrs = emMKPOS_sep1A(None, _x[hashsp], TR=1, K=K)
-        else:
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            #spNClstrs=[[1, 2], [1, 4]] if spcdim==1 else [[1, 2], [1, 4]]
-            spNClstrs=[[1, 4], [1, 4]] if spcdim==1 else [[1, 2], [1, 3]]
-            #labH, labS, clstrs = emMKPOS_sep1A(_x[unonhash], None, TR=1, K=K, spcdim=spcdim, spNClstrs=spNClstrs, wfNClstrs=[[1, 4], [1, 4]], )
-            labH, labS, clstrs = emMKPOS_sep1A(_x[unonhash], None, TR=1, K=K, spcdim=spcdim, spNClstrs=spNClstrs, wfNClstrs=[[1, 11], [1, 11]], )
-            #  labs, labh are at this point both starting from 0
-        # if doSepHash:
-        #     contiguous_pack2(labH, startAt=0)
-        #     clstrs[0] = len(_N.unique(labH))
-        #     clstrs[0] = 2 if clstrs[0] == 1 else clstrs[0]  # at least 2 hash clstrs
-
-        #     contiguous_pack2(labS, startAt=clstrs[0])
-        #     clstrs[1] = len(_N.unique(labS)) 
-
-        #     _N.savetxt("labH", labH, fmt="%d")
-        #     _N.savetxt("labS", labS, fmt="%d")
-
-            #colorclusters(_x[hashsp], labH, clstrs[0], name="hash", xLo=xLo, xHi=xHi)
-            #colorclusters(_x[unonhash], labS, clstrs[1], name="nhash", xLo=xLo, xHi=xHi)
-
-
-    #     #fig = _plt.figure(figsize=(7, 10))
-    #     #fig.add_subplot(2, 1, 1)
+        labS, clstrs = emMKPOS_sep1A(_x[unonhash], TR=2, K=K, spcdim=spcdim, spNClstrs=spNClstrs, wfNClstrs=[1, 11], )
+        #  labs, labh are at this point both starting from 0
 
         flatlabels = _N.ones(n1-n0, dtype=_N.int)*-1   # 
 
@@ -85,19 +58,12 @@ def initClusters(oo, M_max, K, x, mks, t0, t1, Asts, xLo=0, xHi=3, oneCluster=Fa
             if len(these) > 0:
                 flatlabels[unonhash[these]] = i
 
-        for i in labH:
-            these = _N.where(labH == i)[0]
-
-            if len(these) > 0:
-                flatlabels[hashsp[these]] = i 
-
-        MS     = int(clstrs[1]) 
+        MS     = clstrs
         #MS = MS + 9
-        M_use      = int(clstrs[1]) + 3
+        M_use      = clstrs + 3
         #M_use       = 7
         print("------------")
-        print("hash clusters %d" % clstrs[0])
-        print("signal clusters %d" % MS)
+        print("signal clusters %d" % clstrs)
         print("------------")
 
         #M = int(clstrs[0] + clstrs[1]) + 1   #  20% more clusters
@@ -108,7 +74,7 @@ def initClusters(oo, M_max, K, x, mks, t0, t1, Asts, xLo=0, xHi=3, oneCluster=Fa
     ##################
 
     # flatlabels + lab = same content, but flatlabels are temporally correct
-    return labS, labH, flatlabels, M_use
+    return labS, flatlabels, M_use
 
 
 def declare_params(M, K, uAll=None, SgAll=None, spcdim=1):
@@ -789,9 +755,9 @@ def finish_epoch2_cgz(oo, nSpks, epc, ITERS, clstszs, l0, f, q2, u, Sg, _f_u, _f
             if (oo.sp_prmPstMd[oo.ky_p_f+3*m] < oo.xLo-sq25[m]) or (oo.sp_prmPstMd[oo.ky_p_f+3*m] > oo.xHi+sq25[m]):
                 breset = True
                 reason = "spatial cener too far away from edges  %d" % m
-            elif (v1 > 5.):
-                breset = True
-                reason = "high uncertainty relative to width  %d" % m
+            # elif (v1 > 5.):
+            #     breset = True
+            #     reason = "high uncertainty relative to width  %d" % m
 
             elif (v2 < 4000) and (not global_stop_condition):
                 if (v1 > 1.) and (occ[m] < K//2):
@@ -963,12 +929,12 @@ def finish_epoch2_cgz_2d(oo, nSpks, epc, ITERS, clstszs, l0, fx, fy, q2x, q2y, u
                 print("%(yLo).1f  %(5sd).1f" % {"yLo" : oo.yLo, "5sd" : sq25y[m]})
                 print("%(yHi).1f  %(5sd).1f" % {"yHi" : oo.yLo, "5sd" : sq25y[m]})                
                 reason = "spatial cener too far away from edges  %d" % m
-            elif (v1x > 5.):
-                breset = True
-                reason = "high uncertainty relative to width  %d" % m
-            elif (v1y > 5.):
-                breset = True
-                reason = "high uncertainty relative to width  %d" % m
+            # elif (v1x > 5.):
+            #     breset = True
+            #     reason = "high uncertainty relative to width  %d" % m
+            # elif (v1y > 5.):
+            #     breset = True
+            #     reason = "high uncertainty relative to width  %d" % m
 
             elif (v2 < 4000) and (not global_stop_condition):
                 if (v1 > 1.) and (occ[m] < K//2):
@@ -994,7 +960,10 @@ def finish_epoch2_cgz_2d(oo, nSpks, epc, ITERS, clstszs, l0, fx, fy, q2x, q2y, u
                 #print("****NO RESET cl %(m)d.   occ %(o).3f   %(1).3e  %(2).3e  %(3).3e" % {"o" : occ[m], "1" : v1, "2" : v2, "3" : v3, "m" : m})
                 freeClstr[m] = False
 
-                    
+    print("freeClstr---------------")
+    print(freeClstr)
+    if len(_N.where(freeClstr == False)[0]) == 0:
+        print("ALL CLUSTERS are FREECLUSTERS. Ooops, nSpks=%d" % nSpks)
 
     print("DONE finish_epoch2")
     #rsmp_sp_prms = smp_sp_prms.swapaxes(1, 0).reshape(ITERS, 3*M_use, order="F")
@@ -1191,6 +1160,8 @@ def finish_epoch2_2d(oo, nSpks, epc, ITERS, gz, l0, fx, fy, q2x, q2y, u, Sg, _fx
 
     print("freeClstr---------------")
     print(freeClstr)
+    if len(_N.where(freeClstr == False)[0]) == 0:
+        print("ALL CLUSTERS are FREECLUSTERS. Ooops, nSpks=%d" % nSpks)
 
     #_N.savetxt(resFN("posParams_%d.dat" % epc, dir=oo.outdir), rsmp_sp_prms, fmt=("%.4f %.4f %.4f " * M_use))   #  the params for the non-noise
     #_N.savetxt(resFN("posHypParams.dat", dir=oo.outdir), smp_sp_hyps[:, :, 0].T, fmt="%.4f %.4f %.4f %.4f %.4f %.4f")
@@ -1471,8 +1442,6 @@ def contiguous_inuse(M_use, M_max, K, freeClstr, l0, f, q2, u, Sg, _l0_a, _l0_B,
         
 
 
-    print("after cont")
-    print(freeClstr[0:M_use])
 
 def contiguous_inuse_cgz(M_use, M_max, K, freeClstr, l0, f, q2, u, Sg, _l0_a, _l0_B, _f_u, _f_q2, _q2_a, _q2_B, _u_u, _u_Sg, _Sg_nu, _Sg_PSI, smp_sp_prms, smp_mk_prms, sp_prmPstMd, mk_prmPstMd, cgz, priors):
     #  method called after Gibbs iters are completed
@@ -1602,9 +1571,6 @@ def contiguous_inuse_cgz(M_use, M_max, K, freeClstr, l0, f, q2, u, Sg, _l0_a, _l
         
 
 
-    print("after cont")
-    print(freeClstr[0:M_use])
-
 
 
 def contiguous_inuse_cgz_2d(M_use, M_max, K, freeClstr, l0, fx, fy, q2x, q2y, u, Sg, _l0_a, _l0_B, _fx_u, _fy_u, _fx_q2, _fy_q2, _q2x_a, _q2y_a, _q2x_B, _q2y_B, _u_u, _u_Sg, _Sg_nu, _Sg_PSI, smp_sp_prms, smp_mk_prms, sp_prmPstMd, mk_prmPstMd, cgz, priors):
@@ -1717,9 +1683,10 @@ def contiguous_inuse_cgz_2d(M_use, M_max, K, freeClstr, l0, fx, fy, q2x, q2y, u,
                     smp_mk_prms[1][inuseIDs[imu]] = tempKxK
 
                     #oo.sp_prmPstMd = _N.zeros(3*M_use)   # mode params
-                    sp_prmPstMd[3*freeIDs[imf]:3*(freeIDs[imf]+1)]        = sp_prmPstMd[3*inuseIDs[imu]:3*(inuseIDs[imu]+1)]
-                    sp_prmPstMd[0 + 3*inuseIDs[imu]]        = 1e-15   #  neutralize this cluster
-                    sp_prmPstMd[2 + 3*inuseIDs[imu]]        = 10000   #  neutralize this cluster
+                    sp_prmPstMd[5*freeIDs[imf]:5*(freeIDs[imf]+1)]        = sp_prmPstMd[5*inuseIDs[imu]:5*(inuseIDs[imu]+1)]
+                    sp_prmPstMd[0 + 5*inuseIDs[imu]]        = 1e-15   #  neutralize this cluster
+                    sp_prmPstMd[3 + 5*inuseIDs[imu]]        = 10000   #  neutralize this cluster
+                    sp_prmPstMd[4 + 5*inuseIDs[imu]]        = 10000   #  neutralize this cluster                    
 
                     mk_prmPstMd[0][freeIDs[imf]]        = mk_prmPstMd[0][inuseIDs[imu]]
                     mk_prmPstMd[1][freeIDs[imf]]        = mk_prmPstMd[1][inuseIDs[imu]]
@@ -1750,9 +1717,4 @@ def contiguous_inuse_cgz_2d(M_use, M_max, K, freeClstr, l0, fx, fy, q2x, q2y, u,
         print("didn't need to do anything, inuse are all contiguous")
         print("M_use is %(Mu)d   len(freeIDs) %(fI)d    len(inuseIDs) %(iI)d" % {"Mu" : M_use, "fI" : len(freeIDs), "iI" : len(inuseIDs)})
         
-
-
-    print("after cont")
-    print(freeClstr[0:M_use])
-    
 

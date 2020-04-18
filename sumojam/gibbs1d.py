@@ -86,7 +86,7 @@ class GibbsSampler1D:
         
 
     def __init__(self, outdir, fn, intvfn, xLo, xHi, adapt, oneCluster=False, tet=None, __JIFIResultDir__=None, seg_filtered_intvs=None, spc_2d_use_1d_col=-1, seg_col=None, mv_stop_col=None):
-        print("gibbs init")
+        print("gibbs init    %s" % fn)
         oo     = self
         oo.__JIFIResultDir__=__JIFIResultDir__
         oo.t0_0 = _tm.time()
@@ -123,11 +123,7 @@ class GibbsSampler1D:
         _intvs  = _N.array(intvs*_dat.shape[0], dtype=_N.int) if seg_filtered_intvs is None else seg_filtered_intvs
 
         oo.intvs  = _N.array(_intvs)  # intervals in time of segment filtered data
-        print(")))))))))))))))))))))))))))")
-        print(oo.intvs)
-        print("(((((((((((((((((((((((((((")
 
-        print("mvng_col   %d" % mvng_col)
         t0 = 0
         for i in range(len(intvs)-1):
 
@@ -147,8 +143,8 @@ class GibbsSampler1D:
         """
         gtdiffusion:  use ground truth center of place field in calculating variance of center.  Meaning of diffPerMin different
         """
-        print("gibbs   %.5f" % _N.random.rand())
         oo = self
+        print("RUNNING GIBBS GIBBS 1d  %(tet)d   %(save)s" % {"tet" : oo.tetr, "save" : oo.outdir})                
 
         twpi     = 2*_N.pi
         pcklme   = {}
@@ -223,14 +219,12 @@ class GibbsSampler1D:
                 ap_mn_x   = ap_mns
                 ap_sd2s_x = ap_sd2s
                 ap_Ns     = _ap_Ns
-                print(ap_mn_x.shape)
-                print(ap_sd2s.shape)
-                print(_ap_Ns.shape)
-                print("totalpcs  %d" % totalpcs)
                     
             
             if epc == ep1:   ###  initialize
-                labS, labH, flatlabels, M_use = gAMxMu.initClusters(oo, M_max, K, xr, init_mks, t0, t1, Asts, xLo=oo.xLo, xHi=oo.xHi, oneCluster=oo.oneCluster)
+                labS, flatlabels, M_use = gAMxMu.initClusters(oo, M_max, K, xr, init_mks, t0, t1, Asts, xLo=oo.xLo, xHi=oo.xHi, oneCluster=oo.oneCluster)
+                print("flatlabels")
+                print(flatlabels)
 
                 #  hyperparams of posterior. Not needed for all params
                 u_u_  = _N.empty((M_use, K))
@@ -268,7 +262,7 @@ class GibbsSampler1D:
                 l0_M, f_M, q2_M, u_M, Sg_M = gAMxMu.declare_params(M_max, K)   #  nzclstr not inited  # sized to include noise cluster if needed
                 l0_exp_hist_M = _N.empty(M_max)
                 _l0_a_M, _l0_B_M, _f_u_M, _f_q2_M, _q2_a_M, _q2_B_M, _u_u_M, \
-                    _u_Sg_M, _Sg_nu_M, _Sg_PSI_M = gAMxMu.declare_prior_hyp_params(M_max, K, x, fit_mks, Asts, t0, priors, labS, labH)                    
+                    _u_Sg_M, _Sg_nu_M, _Sg_PSI_M = gAMxMu.declare_prior_hyp_params(M_max, K, x, fit_mks, Asts, t0, priors, labS, None)                    
 
                 l0, f, q2, u, Sg        = gAMxMu.copy_slice_params(M_use, l0_M, f_M, q2_M, u_M, Sg_M)
                 _l0_a, _l0_B, _f_u, _f_q2, _q2_a, _q2_B, _u_u, _u_Sg, _Sg_nu, _Sg_PSI        = gAMxMu.copy_slice_hyp_params(M_use, _l0_a_M, _l0_B_M, _f_u_M, _f_q2_M, _q2_a_M, _q2_B_M, _u_u_M, _u_Sg_M, _Sg_nu_M, _Sg_PSI_M)
@@ -426,15 +420,6 @@ class GibbsSampler1D:
 
             goback = 500
 
-            print("priors for Sg")
-            print(_Sg_nu)            
-            print("priors for q2")
-            print(_q2_a)
-            print(_q2_B)
-            print("priors for l0")
-            print(_l0_a)
-            print(_l0_B)
-
             #  B' / (a' - 1) = MODE   #keep mode the same after discount
             if (epc > 0) and oo.adapt:
                 #  hyperparameter for q2
@@ -451,7 +436,6 @@ class GibbsSampler1D:
                 #  a/2 / B/2    variance is a/2 / B^2/4 = 2a^2 / B^2  
                 #  variance increases by 2
 
-                print("DT/tau_l0  %.5f" % (DT/tau_l0))
                 _Dl0_a = _l0_a * _N.exp(-DT/tau_l0)
                 _Dl0_B = _Dl0_a / _mn_nd
             else:
@@ -635,13 +619,6 @@ class GibbsSampler1D:
                 if (global_stop_condition and (cond1 or cond2)):
                     print("I SHOULD NEVER BE HERE")
                     tttt1 = _tm.time()
-                    print(clstszs[0])
-                    print(clstszs[1000])
-                    print(clstszs[2000])
-                    print(clstszs[itr-3])
-                    print(clstszs[itr-2])
-                    print(clstszs[itr-1])                    
-                    print(clstszs[itr])
                     stop_Gibbs = _pU.stop_Gibbs_cgz(itr, M_use, nSpks, smp_sp_prms, clstszs)
                     tttt2 = _tm.time()
                     print("tet %(tet)d   stop_Gibbs:  %(tm).2f" % {"tet" : oo.tetr, "tm" : (tttt2-tttt1)})
@@ -716,3 +693,4 @@ class GibbsSampler1D:
 
             fp.close()
 
+        print("DONE WITH GIBBS GIBBS 1d  %(tet)d   %(save)s" % {"tet" : oo.tetr, "save" : oo.outdir})            
